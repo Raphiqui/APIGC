@@ -1,0 +1,8 @@
+{
+  "name": "APIGC",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/Raphiqui/APIGC.git",
+  "author": "Norsse <raphael.pastre@gmail.com>",
+  "license": "MIT"
+}
