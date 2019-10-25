@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const dataModel = require('./dataModel.js');
 
-const dbURL = 'mongodb://127.0.0.1:27017/ululu';
+const dbURL = 'mongodb://127.0.0.1:27017/APIGCDB';
 
 mongoose.connect(dbURL, (err, db) => {
     if (err) {
@@ -19,7 +19,7 @@ mongoose.connect(dbURL, (err, db) => {
     });
 
     const msg = new dataModel({
-        csv_id: '8',
+        csv_id: '9',
         title: 'This is a title',
         gender_id: 'WOM',
         composition: '6% Elasthanne',
