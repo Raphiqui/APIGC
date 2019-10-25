@@ -6,8 +6,9 @@ const DataSchema = new mongoose.Schema({
     gender_id: String,
     composition: String,
     sleeve: String,
-    photot: String,
+    photo: String,
     url: String,
+    test: String,
 });
 
 module.exports = mongoose.model('Data', DataSchema);
