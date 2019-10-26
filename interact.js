@@ -28,7 +28,6 @@ const getURL = () => {
 
                 const photoUrl = 'http:' + doc.photo;
                 const promise = await fetchColor(photoUrl);
-                console.log("r:", promise);
                 const update = {dom_color: promise};
                 db.collection('products').updateOne(
                     {_id: doc._id},

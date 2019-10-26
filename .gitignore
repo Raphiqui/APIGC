@@ -3,3 +3,5 @@
 /node_modules
 /data/credentials.json
 /data/test.jpg
+/initBDD.js
+/dataModel.js
