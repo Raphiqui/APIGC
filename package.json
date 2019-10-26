@@ -8,7 +8,9 @@
   "dependencies": {
     "@google-cloud/vision": "^1.5.0",
     "csv-parser": "^2.3.1",
+    "express": "^4.17.1",
     "fast-csv": "^3.4.0",
-    "mongoose": "^5.7.7"
+    "mongoose": "^5.7.7",
+    "nodemon": "^1.19.4"
   }
 }
