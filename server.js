@@ -3,6 +3,7 @@ const path = require('path');
 const app = express();
 
 app.get('/ping', (req, res) => {
+    console.log('up');
     res.send('pong')
 });
 
