@@ -2,9 +2,10 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-app.get('/ping', (req, res) => {
-    console.log('up');
-    res.send('pong')
+app.get('/api/item/:test', (req, res) => {
+    const { test } = req.params;
+    console.log(test);
+    res.send('Param ' + test)
 });
 
 app.listen(process.env.PORT || 3053, () => {
