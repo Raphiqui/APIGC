@@ -6,6 +6,7 @@ const dbURL = 'mongodb://127.0.0.1:27017/APIGCDB';
 const app = express();
 const storage = require('./interact.js');
 
+let a = [];
 
 app.get('/api/products/:id', async (req, res) => {
     const { id } = req.params;
@@ -28,24 +29,59 @@ app.get('/api/products/:id', async (req, res) => {
                             reject(err);
                         }
                     });
+
+                    db.close();
                 });
             });
         };
 
+        const getTest1 = () => {
+            return new Promise((resolve, reject) => {
+                mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+                    if (err) {
+                        throw err;
+                    }
+                    const dbo = db.db;
+
+                    dbo.collection('products').find().limit(10).toArray((err, result) => {
+                        if (err === null) {
+                            resolve(result);
+                        } else {
+                            console.log(err);
+                            reject(err);
+                        }
+                    });
+
+                    db.close();
+                });
+
+            });
+        };
+
         const color = await getTest();
+        const b = await getTest1();
+
         const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
-        console.log(hexColor);
-        let result = cproxy.proximity("#ffffff",hexColor);
 
-        result = 100 - result;
+        a = [];
 
-        if(result > 90){
-            console.log('Matching higher than 90% with :', result);
-        }else{
-            console.log('Matching lesser than 90% with :', result);
-        }
+        b.map(item => {
 
-        res.send('Pong')
+            const hexColor0 = '#' + convert.rgb.hex(item.dom_color.color.red, item.dom_color.color.green, item.dom_color.color.blue);
+
+            let result = cproxy.proximity(hexColor, hexColor0);
+
+            result = 100 - result;
+
+            if(result > 92){
+                console.log('Matching higher than 92% with :', result);
+                a.push("http:" + item.photo)
+            }else{
+                console.log('Matching lesser than 92% with :', result);
+            }
+        });
+
+        res.send(a)
     } else {
         res.send('Wrong id')
     }
