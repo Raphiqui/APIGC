@@ -6,6 +6,8 @@ const client = new vision.ImageAnnotatorClient({
     credentials
 });
 
+const storage = [];
+
 async function fetchColor(image) {
     // Performs label detection on the image file
     const [result] = await client.imageProperties(image);
@@ -25,7 +27,7 @@ const getURL = () => {
             const dbo = db.db;
 
             db.collection('products').find({}).limit(10).forEach(async doc => {
-
+                storage.push(doc.id);
                 const photoUrl = 'http:' + doc.photo;
                 const promise = await fetchColor(photoUrl);
                 const update = {dom_color: promise};
@@ -47,3 +49,5 @@ const asyncFunction = async () => {
 };
 
 asyncFunction();
+
+module.exports = storage;
