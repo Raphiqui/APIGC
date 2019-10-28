@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cproxy = require('colour-proximity');
 const convert = require('color-convert');
-const dbURL = 'mongodb://127.0.0.1:27017/APIGCDB';
+const database = require('./data/db.json');
 const app = express();
 
 let a = [];
@@ -12,7 +12,7 @@ app.get('/api/products/:id', async (req, res) => {
 
     const checkID = () => {
         return new Promise((resolve, reject) => {
-            mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+            mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
                 if (err) {
                     throw err;
                 }
@@ -33,7 +33,7 @@ app.get('/api/products/:id', async (req, res) => {
 
     const getTest = () => {
         return new Promise((resolve, reject) => {
-            mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+            mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
                 if (err) {
                     throw err;
                 }
@@ -55,7 +55,7 @@ app.get('/api/products/:id', async (req, res) => {
 
     const getTest1 = () => {
         return new Promise((resolve, reject) => {
-            mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+            mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
                 if (err) {
                     throw err;
                 }

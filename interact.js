@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const vision = require('@google-cloud/vision');
 const credentials = require('./data/credentials.json');
-const dbURL = 'mongodb://127.0.0.1:27017/APIGCDB';
+const database = require('./data/db.json');
 const client = new vision.ImageAnnotatorClient({
     credentials
 });
@@ -26,7 +26,7 @@ fetchColor = async (image) => {
 const getURL = () => {
 
     return new Promise((resolve, reject) => {
-        mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+        mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
             if (err) {
                 throw err;
             }
