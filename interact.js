@@ -6,6 +6,11 @@ const client = new vision.ImageAnnotatorClient({
     credentials
 });
 
+/**
+ * Will interrogate the google cloud api about an url given as parameter then fetch the most dominant color
+ * @param image: string corresponding to an image's url
+ * @returns {Promise<*>} the response from the api
+ */
 fetchColor = async (image) => {
     // Performs label detection on the image file
     const [result] = await client.imageProperties(image);
@@ -23,15 +28,23 @@ fetchColor = async (image) => {
     }
 };
 
-const getURL = () => {
+/**
+ * After connecting to the database fetches the object containing the dominant color in order to update the correct
+ * record into the database with its dominant color
+ * @returns {Promise<any>}
+ */
+const updateRecords = () => {
 
     return new Promise((resolve, reject) => {
         mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
             if (err) {
                 throw err;
             }
-            const dbo = db.db;
 
+            /**
+             * Interrogate the database then foreach record found, compute to update it with the object
+             * containing the dominant color
+             */
             db.collection('products').find({}).limit(20).forEach(async doc => {
                 const photoUrl = 'http:' + doc.photo;
                 const promise = await fetchColor(photoUrl);
@@ -51,8 +64,15 @@ const getURL = () => {
     });
 };
 
+/**
+ *
+ * @returns {Promise<void>}
+ */
 const asyncFunction = async () => {
-    const a = await getURL();
+    const a = await updateRecords();
 };
 
+/**
+ * Main function of the file
+ */
 asyncFunction();
