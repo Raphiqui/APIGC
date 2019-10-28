@@ -2,14 +2,13 @@ const csv = require('csv-parser');
 const mongoose = require('mongoose');
 const fs = require('fs');
 const results = [];
-
-const dbURL = 'mongodb://127.0.0.1:27017/APIGCDB';
+const database = require('./data/db.json');
 
 fs.createReadStream('./data/products_eb.csv')
     .pipe(csv({separator: ';'}))
     .on('data', (data) => results.push(data))
     .on('end', () => {
-        mongoose.connect(dbURL, (err, db) => {
+        mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
             if (err) {
                 throw err;
             }
