@@ -10,6 +10,10 @@ let a = [];
 app.get('/api/products/:id', async (req, res) => {
     const { id } = req.params;
 
+    /**
+     * Check if the id corresponding to the user's input exists into the database
+     * @returns {Promise<any>} boolean
+     */
     const checkID = () => {
         return new Promise((resolve, reject) => {
             mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
@@ -31,7 +35,11 @@ app.get('/api/products/:id', async (req, res) => {
         });
     };
 
-    const getTest = () => {
+    /**
+     * Fetch the dominant color of the record linked to the user's input
+     * @returns {Promise<any>} object
+     */
+    const fetchInputRecord = () => {
         return new Promise((resolve, reject) => {
             mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
                 if (err) {
@@ -53,6 +61,10 @@ app.get('/api/products/:id', async (req, res) => {
         });
     };
 
+    /**
+     *
+     * @returns {Promise<any>}
+     */
     const getTest1 = () => {
         return new Promise((resolve, reject) => {
             mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
@@ -78,8 +90,12 @@ app.get('/api/products/:id', async (req, res) => {
 
     const check = await checkID();
 
+    /**
+     * If the user's input is into the db then compute to find which record's color is matching (92%)
+     * with the user's input record and return it as an array. Otherwise display an error message
+     */
     if (check){
-        const color = await getTest();
+        const color = await fetchInputRecord();
         const b = await getTest1();
 
         const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
@@ -88,8 +104,11 @@ app.get('/api/products/:id', async (req, res) => {
 
         b.map(item => {
             if (item.dom_color){
+
+                // Get the color as hexadecimal format
                 const hexColor0 = '#' + convert.rgb.hex(item.dom_color.color.red, item.dom_color.color.green, item.dom_color.color.blue);
 
+                // Compute the proximity percentage between two colors
                 let result = cproxy.proximity(hexColor, hexColor0);
 
                 result = 100 - result;
@@ -105,6 +124,7 @@ app.get('/api/products/:id', async (req, res) => {
         });
 
         res.send(a)
+
     }else{
         res.send('After checking this id is not correct !')
     }
