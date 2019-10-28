@@ -4,14 +4,33 @@ const cproxy = require('colour-proximity');
 const convert = require('color-convert');
 const dbURL = 'mongodb://127.0.0.1:27017/APIGCDB';
 const app = express();
-// const storage = require('./interact.js');
 
 let a = [];
 
 app.get('/api/products/:id', async (req, res) => {
     const { id } = req.params;
 
-    // if (storage.indexOf(id) > -1) {
+    const checkID = () => {
+        return new Promise((resolve, reject) => {
+            mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+                if (err) {
+                    throw err;
+                }
+                const dbo = db.db;
+
+                dbo.collection('products').find({ id: id }).toArray((err, result) => {
+                    if (result.length !== 0) {
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                });
+
+                db.close();
+            });
+        });
+    };
+
     const getTest = () => {
         return new Promise((resolve, reject) => {
             mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
@@ -57,37 +76,38 @@ app.get('/api/products/:id', async (req, res) => {
         });
     };
 
-    const color = await getTest();
-    const b = await getTest1();
+    const check = await checkID();
 
-    const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
+    if (check){
+        const color = await getTest();
+        const b = await getTest1();
 
-    a = [];
+        const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
 
-    b.map(item => {
-        if (item.dom_color){
-            const hexColor0 = '#' + convert.rgb.hex(item.dom_color.color.red, item.dom_color.color.green, item.dom_color.color.blue);
+        a = [];
 
-            let result = cproxy.proximity(hexColor, hexColor0);
+        b.map(item => {
+            if (item.dom_color){
+                const hexColor0 = '#' + convert.rgb.hex(item.dom_color.color.red, item.dom_color.color.green, item.dom_color.color.blue);
 
-            result = 100 - result;
+                let result = cproxy.proximity(hexColor, hexColor0);
 
-            if(result > 92){
-                console.log('Matching higher than 92% with :', result);
-                a.push("http:" + item.photo)
-            }else{
-                console.log('Matching lesser than 92% with :', result);
+                result = 100 - result;
+
+                if(result > 92){
+                    console.log('Matching higher than 92% with :', result);
+                    a.push("http:" + item.photo)
+                }else{
+                    console.log('Matching lesser than 92% with :', result);
+                }
             }
-        }
 
-    });
+        });
 
-    res.send(a)
-    // } else {
-    //     res.send('Wrong id')
-    // }
-
-
+        res.send(a)
+    }else{
+        res.send('After checking this id is not correct !')
+    }
 });
 
 app.listen(process.env.PORT || 3053, () => {
