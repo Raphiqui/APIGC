@@ -1,11 +1,41 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cproxy = require('colour-proximity');
+const cors = require('cors');
 const convert = require('color-convert');
 const database = require('./data/db.json');
 const app = express();
 
 let a = [];
+
+app.use(cors());
+
+app.get('/api/fetchIDs', async (req, res) => {
+    const fetchAll = () => {
+        return new Promise((resolve, reject) => {
+            mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+                if (err) {
+                    throw err;
+                }
+                const dbo = db.db;
+
+                dbo.collection('products').find().toArray((err, result) => {
+                    if (err === null) {
+                        resolve(result);
+                    } else {
+                        console.log(err);
+                        reject(err);
+                    }
+                });
+
+            });
+        });
+    };
+
+    const records = await fetchAll();
+
+    res.send(records)
+});
 
 app.get('/api/products/:id', async (req, res) => {
     const { id } = req.params;
