@@ -9,7 +9,7 @@ fs.createReadStream('./data/products_eb.csv')
     .pipe(csv({separator: ';'}))
     .on('data', (data) => results.push(data))
     .on('end', () => {
-        mongoose.connect(dbURL, (err, db) => {
+        mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
             if (err) {
                 throw err;
             }

@@ -4,69 +4,68 @@ const cproxy = require('colour-proximity');
 const convert = require('color-convert');
 const dbURL = 'mongodb://127.0.0.1:27017/APIGCDB';
 const app = express();
-const storage = require('./interact.js');
+// const storage = require('./interact.js');
 
 let a = [];
 
 app.get('/api/products/:id', async (req, res) => {
     const { id } = req.params;
 
-    if (storage.indexOf(id) > -1) {
-        const getTest = () => {
-            return new Promise((resolve, reject) => {
-                mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
-                    if (err) {
-                        throw err;
+    // if (storage.indexOf(id) > -1) {
+    const getTest = () => {
+        return new Promise((resolve, reject) => {
+            mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+                if (err) {
+                    throw err;
+                }
+                const dbo = db.db;
+
+                dbo.collection('products').find({ id: id }).limit(1).toArray((err, result) => {
+                    if (err === null) {
+                        resolve(result[0].dom_color.color);
+                    } else {
+                        console.log(err);
+                        reject(err);
                     }
-                    const dbo = db.db;
-
-                    dbo.collection('products').find({ id: id }).limit(1).toArray((err, result) => {
-                        if (err === null) {
-                            console.log(result[0].dom_color.color);
-                            resolve(result[0].dom_color.color);
-                        } else {
-                            console.log(err);
-                            reject(err);
-                        }
-                    });
-
-                    db.close();
-                });
-            });
-        };
-
-        const getTest1 = () => {
-            return new Promise((resolve, reject) => {
-                mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
-                    if (err) {
-                        throw err;
-                    }
-                    const dbo = db.db;
-
-                    dbo.collection('products').find().limit(10).toArray((err, result) => {
-                        if (err === null) {
-                            resolve(result);
-                        } else {
-                            console.log(err);
-                            reject(err);
-                        }
-                    });
-
-                    db.close();
                 });
 
+                db.close();
             });
-        };
+        });
+    };
 
-        const color = await getTest();
-        const b = await getTest1();
+    const getTest1 = () => {
+        return new Promise((resolve, reject) => {
+            mongoose.connect(dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+                if (err) {
+                    throw err;
+                }
+                const dbo = db.db;
 
-        const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
+                dbo.collection('products').find().limit(20).toArray((err, result) => {
+                    if (err === null) {
+                        resolve(result);
+                    } else {
+                        console.log(err);
+                        reject(err);
+                    }
+                });
 
-        a = [];
+                db.close();
+            });
 
-        b.map(item => {
+        });
+    };
 
+    const color = await getTest();
+    const b = await getTest1();
+
+    const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
+
+    a = [];
+
+    b.map(item => {
+        if (item.dom_color){
             const hexColor0 = '#' + convert.rgb.hex(item.dom_color.color.red, item.dom_color.color.green, item.dom_color.color.blue);
 
             let result = cproxy.proximity(hexColor, hexColor0);
@@ -79,12 +78,14 @@ app.get('/api/products/:id', async (req, res) => {
             }else{
                 console.log('Matching lesser than 92% with :', result);
             }
-        });
+        }
 
-        res.send(a)
-    } else {
-        res.send('Wrong id')
-    }
+    });
+
+    res.send(a)
+    // } else {
+    //     res.send('Wrong id')
+    // }
 
 
 });
