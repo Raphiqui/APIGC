@@ -4,6 +4,9 @@ const fs = require('fs');
 const results = [];
 const database = require('./data/db.json');
 
+/**
+ * Creation of a stream used to read the csv file given then fulfill the database with all the row from the csv
+ */
 fs.createReadStream('./data/products_eb.csv')
     .pipe(csv({separator: ';'}))
     .on('data', (data) => results.push(data))
@@ -12,10 +15,12 @@ fs.createReadStream('./data/products_eb.csv')
             if (err) {
                 throw err;
             }
-            console.log('connected to ' + dbURL);
+
+            console.log('connected to ' + database.dbURL);
 
             const dbo = db.db;
 
+            // Drop the previous collection or do nothing if there is not previous one
             dbo.dropDatabase(err => {
                 if (err === null) {
                     console.log('BDD cleaned');
@@ -24,6 +29,7 @@ fs.createReadStream('./data/products_eb.csv')
                 }
             });
 
+            // Fulfill the collection with the records
             results.map((result) => {
                 dbo.collection("products").insertOne(result, function(err, res) {
                     if (err) throw err;
