@@ -40,7 +40,7 @@ according to the color of the product selected by the id.
 
 ### With th front 
 
-Go [there](link to the front) then clone the repository and use the following command 
+Go [there](https://github.com/Raphiqui/APIGC-front) then clone the repository and use the following command 
 
 ```
 yarn (or npm) run dev

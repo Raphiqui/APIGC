@@ -72,6 +72,8 @@ app.get('/api/updateDomColor', async (req, res) => {
         // Performs label detection on the image file
         const [result] = await client.imageProperties(image);
 
+        console.log(result);
+
         if (result.imagePropertiesAnnotation) {
             const colors = result.imagePropertiesAnnotation.dominantColors.colors;
             return colors[0]
