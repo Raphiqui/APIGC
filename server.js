@@ -97,9 +97,8 @@ app.get('/api/updateDomColor', async (req, res) => {
                  * Interrogate the database then foreach record found, compute to update it with the object
                  * containing the dominant color
                  */
-                db.collection('products').find({}).limit(10).forEach(async doc => {
-                    const photoUrl = 'http:' + doc.photo;
-                    const promise = await fetchColor(photoUrl);
+                db.collection('products').find({}).limit(30).forEach(async doc => {
+                    const promise = await fetchColor(doc.photo);
                     const update = {dom_color: promise};
 
                     db.collection('products').updateOne(
@@ -113,7 +112,7 @@ app.get('/api/updateDomColor', async (req, res) => {
                         })
                 });
 
-                db.collection('products').find().toArray((err, result) => {
+                db.collection('products').find().limit(30).toArray((err, result) => {
                     if (err === null) {
                         resolve(result);
                     } else {
@@ -153,6 +152,7 @@ app.get('/api/products/:id', async (req, res) => {
                 const dbo = db.db;
 
                 dbo.collection('products').find({ id: id }).toArray((err, result) => {
+                    console.log(result)
                     if (result.length !== 0 && result[0].dom_color) {
                         resolve(true);
                     } else {
