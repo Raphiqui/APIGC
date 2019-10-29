@@ -31,6 +31,7 @@ fs.createReadStream('./data/products_eb.csv')
 
             // Fulfill the collection with the records
             results.map((result) => {
+                result.photo = 'http:' + result.photo;
                 dbo.collection("products").insertOne(result, function(err, res) {
                     if (err) throw err;
                     console.log("1 document inserted");
