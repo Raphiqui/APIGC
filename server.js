@@ -72,6 +72,8 @@ app.get('/api/updateDomColor', async (req, res) => {
         // Performs label detection on the image file
         const [result] = await client.imageProperties(image);
 
+        console.log(result);
+
         if (result.imagePropertiesAnnotation) {
             const colors = result.imagePropertiesAnnotation.dominantColors.colors;
             return colors[0]
@@ -195,7 +197,7 @@ app.get('/api/products/:id', async (req, res) => {
      *
      * @returns {Promise<any>}
      */
-    const getTest1 = () => {
+    const getProducts = () => {
         return new Promise((resolve, reject) => {
             mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
                 if (err) {
@@ -226,13 +228,13 @@ app.get('/api/products/:id', async (req, res) => {
      */
     if (check){
         const color = await fetchInputRecord();
-        const b = await getTest1();
+        const products = await getProducts();
 
         const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
 
         const photoURLs = [];
 
-        b.map(item => {
+        products.map(item => {
             if (item.dom_color){
 
                 // Get the color as hexadecimal format
