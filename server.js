@@ -19,7 +19,7 @@ app.get('/api/fetchIDs', async (req, res) => {
                 }
                 const dbo = db.db;
 
-                dbo.collection('products').find().toArray((err, result) => {
+                dbo.collection('products').find().limit(100).toArray((err, result) => {
                     if (err === null) {
                         resolve(result);
                     } else {
