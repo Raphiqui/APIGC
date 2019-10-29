@@ -2,39 +2,140 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cproxy = require('colour-proximity');
 const cors = require('cors');
+const csv = require('csv-parser');
 const convert = require('color-convert');
 const database = require('./data/db.json');
+const fs = require('fs');
 const app = express();
-
-let a = [];
+const vision = require('@google-cloud/vision');
+const credentials = require('./data/credentials.json');
+const client = new vision.ImageAnnotatorClient({
+    credentials
+});
 
 app.use(cors());
 
-app.get('/api/fetchIDs', async (req, res) => {
+app.get('/api/setUp', async (req, res) => {
+
     const fetchAll = () => {
         return new Promise((resolve, reject) => {
-            mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
-                if (err) {
-                    throw err;
-                }
-                const dbo = db.db;
 
-                dbo.collection('products').find().limit(100).toArray((err, result) => {
-                    if (err === null) {
-                        resolve(result);
-                    } else {
-                        console.log(err);
-                        reject(err);
-                    }
+            const results = [];
+
+            fs.createReadStream('./data/products_eb.csv')
+                .pipe(csv({separator: ';'}))
+                .on('data', (data) => results.push(data))
+                .on('end', () => {
+                    mongoose.connect(database.dbURL, {useNewUrlParser: true, useUnifiedTopology: true}, (err, db) => {
+                        if (err) {
+                            throw err;
+                        }
+
+                        console.log('connected to ' + database.dbURL);
+
+                        const dbo = db.db;
+
+                        // Drop the previous collection or do nothing if there is not previous one
+                        dbo.dropDatabase(err => {
+                            if (err === null) {
+                                console.log('BDD cleaned');
+                            } else {
+                                console.log(err);
+                            }
+                        });
+
+                        // Fulfill the collection with the records
+                        results.map((result) => {
+                            dbo.collection("products").insertOne(result, function (err, res) {
+                                if (err) throw err;
+                                console.log("1 document inserted");
+                            });
+                        });
+
+                        dbo.collection('products').find().limit(100).toArray((err, result) => {
+                            if (err === null) {
+                                resolve(result);
+                            } else {
+                                console.log(err);
+                                reject(err);
+                            }
+                        });
+                    });
                 });
-
-            });
         });
     };
 
     const records = await fetchAll();
 
     res.send(records)
+});
+
+app.get('/api/updateDomColor', async (req, res) => {
+    /**
+     * Will interrogate the google cloud api about an url given as parameter then fetch the most dominant color
+     * @param image: string corresponding to an image's url
+     * @returns {Promise<*>} the response from the api
+     */
+    const fetchColor = async (image) => {
+        // Performs label detection on the image file
+        const [result] = await client.imageProperties(image);
+
+        if (result.imagePropertiesAnnotation) {
+            const colors = result.imagePropertiesAnnotation.dominantColors.colors;
+            return colors[0]
+        }else{
+            return null
+        }
+    };
+
+    /**
+     * After connecting to the database fetches the object containing the dominant color in order to update the correct
+     * record into the database with its dominant color
+     * @returns {Promise<any>}
+     */
+    const updateRecords = () => {
+
+        return new Promise((resolve, reject) => {
+            mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+                if (err) {
+                    throw err;
+                }
+
+                /**
+                 * Interrogate the database then foreach record found, compute to update it with the object
+                 * containing the dominant color
+                 */
+                db.collection('products').find({}).limit(35).forEach(async doc => {
+                    const photoUrl = 'http:' + doc.photo;
+                    const promise = await fetchColor(photoUrl);
+                    const update = {dom_color: promise};
+
+                    db.collection('products').updateOne(
+                        {id: doc.id},
+                        {$set: update},
+                        {upsert: true, new: true}, (err, result) => {
+                            if (!err) {
+                                resolve(true)
+                            } else {
+                                console.log(err);
+                                reject(err)
+                            }
+                        })
+                });
+            });
+        });
+    };
+
+    /**
+     *
+     * @returns {Promise<void>}
+     */
+    const asyncFunction = async () => {
+        await updateRecords();
+        res.send(true)
+    };
+
+    asyncFunction();
 });
 
 app.get('/api/products/:id', async (req, res) => {
@@ -130,7 +231,7 @@ app.get('/api/products/:id', async (req, res) => {
 
         const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
 
-        a = [];
+        const a = [];
 
         b.map(item => {
             if (item.dom_color){

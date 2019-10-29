@@ -15,12 +15,10 @@ fetchColor = async (image) => {
     // Performs label detection on the image file
     const [result] = await client.imageProperties(image);
 
-    console.log(result);
-
     if (result.imagePropertiesAnnotation) {
         const colors = result.imagePropertiesAnnotation.dominantColors.colors;
         // colors.forEach(color => console.log(color));
-        console.log(colors[0]);
+        // console.log(colors[0]);
 
         return colors[0]
     }else{
@@ -46,8 +44,7 @@ const updateRecords = () => {
              * containing the dominant color
              */
             db.collection('products').find({}).limit(20).forEach(async doc => {
-                const photoUrl = 'http:' + doc.photo;
-                const promise = await fetchColor(photoUrl);
+                const promise = await fetchColor(doc.photo);
                 const update = {dom_color: promise};
 
                 db.collection('products').updateOne(
@@ -59,7 +56,9 @@ const updateRecords = () => {
                             reject(err)
                         }
                     })
-            });
+            }, () => {
+                resolve(true)
+            })
         });
     });
 };
@@ -69,7 +68,9 @@ const updateRecords = () => {
  * @returns {Promise<void>}
  */
 const asyncFunction = async () => {
-    const a = await updateRecords();
+    const response = await updateRecords();
+    console.log(response);
+    process.exit(0)
 };
 
 /**

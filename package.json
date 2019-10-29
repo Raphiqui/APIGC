@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "initDB": "node index.js",
-    "fetchDomColor": "node interact.js"
+    "updateDomColor": "node interact.js"
   },
   "dependencies": {
     "@google-cloud/vision": "^1.5.0",
