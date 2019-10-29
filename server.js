@@ -46,6 +46,7 @@ app.get('/api/setUp', async (req, res) => {
 
                         // Fulfill the collection with the records
                         results.map((result) => {
+                            result.photo = 'http:' + result.photo;
                             dbo.collection("products").insertOne(result, function (err, res) {
                                 if (err) throw err;
                                 console.log("1 document inserted");
@@ -152,7 +153,7 @@ app.get('/api/products/:id', async (req, res) => {
                 const dbo = db.db;
 
                 dbo.collection('products').find({ id: id }).toArray((err, result) => {
-                    if (result.length !== 0) {
+                    if (result.length !== 0 && result[0].dom_color) {
                         resolve(true);
                     } else {
                         resolve(false);
@@ -229,7 +230,7 @@ app.get('/api/products/:id', async (req, res) => {
 
         const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
 
-        const a = [];
+        const photoURLs = [];
 
         b.map(item => {
             if (item.dom_color){
@@ -244,7 +245,7 @@ app.get('/api/products/:id', async (req, res) => {
 
                 if(result > 92){
                     console.log('Matching higher than 92% with :', result);
-                    a.push(item.photo)
+                    photoURLs.push(item.photo)
                 }else{
                     console.log('Matching lesser than 92% with :', result);
                 }
@@ -252,10 +253,10 @@ app.get('/api/products/:id', async (req, res) => {
 
         });
 
-        res.send(a)
+        res.send(photoURLs)
 
     }else{
-        res.send('After checking this id is not correct !')
+        res.send('After checking this id is not correct, not into the database or record not containing dominant color!')
     }
 });
 
