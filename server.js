@@ -50,24 +50,15 @@ app.get('/api/setUp', async (req, res) => {
                                 if (err) throw err;
                                 console.log("1 document inserted");
                             });
-                        });
-
-                        dbo.collection('products').find().limit(100).toArray((err, result) => {
-                            if (err === null) {
-                                resolve(result);
-                            } else {
-                                console.log(err);
-                                reject(err);
-                            }
-                        });
+                        }).then(resolve(true));
                     });
                 });
         });
     };
 
-    const records = await fetchAll();
+    await fetchAll();
 
-    res.send(records)
+    res.send(true)
 });
 
 app.get('/api/updateDomColor', async (req, res) => {
@@ -105,7 +96,7 @@ app.get('/api/updateDomColor', async (req, res) => {
                  * Interrogate the database then foreach record found, compute to update it with the object
                  * containing the dominant color
                  */
-                db.collection('products').find({}).limit(35).forEach(async doc => {
+                db.collection('products').find({}).limit(10).forEach(async doc => {
                     const photoUrl = 'http:' + doc.photo;
                     const promise = await fetchColor(photoUrl);
                     const update = {dom_color: promise};
@@ -114,13 +105,20 @@ app.get('/api/updateDomColor', async (req, res) => {
                         {id: doc.id},
                         {$set: update},
                         {upsert: true, new: true}, (err, result) => {
-                            if (!err) {
-                                resolve(true)
-                            } else {
+                            if (err) {
                                 console.log(err);
                                 reject(err)
                             }
                         })
+                });
+
+                db.collection('products').find().toArray((err, result) => {
+                    if (err === null) {
+                        resolve(result);
+                    } else {
+                        console.log(err);
+                        reject(err);
+                    }
                 });
             });
         });
@@ -131,8 +129,8 @@ app.get('/api/updateDomColor', async (req, res) => {
      * @returns {Promise<void>}
      */
     const asyncFunction = async () => {
-        await updateRecords();
-        res.send(true)
+        const records = await updateRecords();
+        res.send(records)
     };
 
     asyncFunction();
@@ -246,7 +244,7 @@ app.get('/api/products/:id', async (req, res) => {
 
                 if(result > 92){
                     console.log('Matching higher than 92% with :', result);
-                    a.push("http:" + item.photo)
+                    a.push(item.photo)
                 }else{
                     console.log('Matching lesser than 92% with :', result);
                 }
