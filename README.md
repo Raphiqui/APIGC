@@ -14,6 +14,7 @@ to get your json containing your credentials. Then into the project do the follo
 ```
 cd APIGC\data
 touch credentials.json
+mkdir images
 ```
 
 ## Execution
