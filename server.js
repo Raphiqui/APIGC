@@ -9,6 +9,7 @@ const fs = require('fs');
 const app = express();
 const vision = require('@google-cloud/vision');
 const credentials = require('./data/credentials.json');
+const download = require('image-downloader');
 const client = new vision.ImageAnnotatorClient({
     credentials
 });
@@ -48,10 +49,12 @@ app.get('/api/setUp', async (req, res) => {
                         results.map((result) => {
                             result.photo = 'http:' + result.photo;
                             dbo.collection("products").insertOne(result, function (err, res) {
-                                if (err) throw err;
-                                console.log("1 document inserted");
+                                if (err) {throw err;} else {
+                                    console.log("1 document inserted");
+                                    resolve(true)
+                                }
                             });
-                        }).then(resolve(true));
+                        })
                     });
                 });
         });
@@ -72,14 +75,29 @@ app.get('/api/updateDomColor', async (req, res) => {
         // Performs label detection on the image file
         const [result] = await client.imageProperties(image);
 
-        console.log(result);
-
         if (result.imagePropertiesAnnotation) {
             const colors = result.imagePropertiesAnnotation.dominantColors.colors;
+            console.log("Fetch color for record");
             return colors[0]
         }else{
             return null
         }
+    };
+
+    /**
+     *
+     * @param url
+     * @returns {Promise<void>}
+     */
+    const bufferImage = async (url) => {
+
+        const options = {
+            url: url,
+            dest: './data/images'
+        };
+
+        const {filename, image} = await download.image(options);
+        return filename
     };
 
     /**
@@ -99,29 +117,45 @@ app.get('/api/updateDomColor', async (req, res) => {
                  * Interrogate the database then foreach record found, compute to update it with the object
                  * containing the dominant color
                  */
-                db.collection('products').find({}).limit(30).forEach(async doc => {
-                    const promise = await fetchColor(doc.photo);
-                    const update = {dom_color: promise};
+                db.collection('products').find({}).forEach(async doc => {
 
-                    db.collection('products').updateOne(
-                        {id: doc.id},
-                        {$set: update},
-                        {upsert: true, new: true}, (err, result) => {
-                            if (err) {
-                                console.log(err);
-                                reject(err)
-                            }
-                        })
-                });
+                    try {
+                        const localImg = await bufferImage(doc.photo);
+                        const promise = await fetchColor(localImg);
+                        const update = {dom_color: promise};
 
-                db.collection('products').find().limit(30).toArray((err, result) => {
-                    if (err === null) {
-                        resolve(result);
-                    } else {
-                        console.log(err);
-                        reject(err);
+                        db.collection('products').updateOne(
+                            {id: doc.id},
+                            {$set: update},
+                            {upsert: true, new: true}, (err, result) => {
+                                if (err) {
+                                    throw err;
+                                }else{
+                                    resolve(true)
+                                }
+                            })
+                    }catch (e) {
+                        console.log(e)
                     }
-                });
+                })
+            });
+        });
+    };
+
+    const fetchNewRecords = () => {
+        return new Promise((resolve, reject) => {
+            mongoose.connect(database.dbURL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, db) => {
+                if (err) {
+                    throw err;
+                }
+
+                db.collection('products').find().limit.toArray((err, result) => {
+                    if (err !== null) {
+                        throw err;
+                    }else{
+                        resolve(result)
+                    }
+                })
             });
         });
     };
@@ -131,11 +165,22 @@ app.get('/api/updateDomColor', async (req, res) => {
      * @returns {Promise<void>}
      */
     const asyncFunction = async () => {
-        const records = await updateRecords();
-        res.send(records)
+        try {await updateRecords();}catch (e) {console.log(e)}
+        try {
+            const records = await fetchNewRecords();
+            res.send(records)
+        } catch (e) {
+            console.log(e);
+        }
+
     };
 
-    asyncFunction();
+    try {
+        asyncFunction();
+    } catch (e) {
+        console.log(e)
+    }
+
 });
 
 app.get('/api/products/:id', async (req, res) => {
@@ -154,15 +199,12 @@ app.get('/api/products/:id', async (req, res) => {
                 const dbo = db.db;
 
                 dbo.collection('products').find({ id: id }).toArray((err, result) => {
-                    console.log(result)
                     if (result.length !== 0 && result[0].dom_color) {
                         resolve(true);
                     } else {
                         resolve(false);
                     }
                 });
-
-                db.close();
             });
         });
     };
@@ -183,12 +225,9 @@ app.get('/api/products/:id', async (req, res) => {
                     if (err === null) {
                         resolve(result[0].dom_color.color);
                     } else {
-                        console.log(err);
-                        reject(err);
+                        throw err;
                     }
                 });
-
-                db.close();
             });
         });
     };
@@ -205,61 +244,60 @@ app.get('/api/products/:id', async (req, res) => {
                 }
                 const dbo = db.db;
 
-                dbo.collection('products').find().limit(20).toArray((err, result) => {
+                dbo.collection('products').find().toArray((err, result) => {
                     if (err === null) {
                         resolve(result);
                     } else {
-                        console.log(err);
-                        reject(err);
+                        throw err;
                     }
                 });
-
-                db.close();
             });
 
         });
     };
 
-    const check = await checkID();
+    try {
+        const check = await checkID();
 
-    /**
-     * If the user's input is into the db then compute to find which record's color is matching (92%)
-     * with the user's input record and return it as an array. Otherwise display an error message
-     */
-    if (check){
-        const color = await fetchInputRecord();
-        const products = await getProducts();
+        /**
+         * If the user's input is into the db then compute to find which record's color is matching (92%)
+         * with the user's input record and return it as an array. Otherwise display an error message
+         */
+        if (check){
+            const color = await fetchInputRecord();
+            const products = await getProducts();
 
-        const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
+            const hexColor = '#' + convert.rgb.hex(color.red, color.green, color.blue);
 
-        const photoURLs = [];
+            const photoURLs = [];
 
-        products.map(item => {
-            if (item.dom_color){
+            products.map(item => {
+                if (item.dom_color){
 
-                // Get the color as hexadecimal format
-                const hexColor0 = '#' + convert.rgb.hex(item.dom_color.color.red, item.dom_color.color.green, item.dom_color.color.blue);
+                    // Get the color as hexadecimal format
+                    const hexColor0 = '#' + convert.rgb.hex(item.dom_color.color.red, item.dom_color.color.green, item.dom_color.color.blue);
 
-                // Compute the proximity percentage between two colors
-                let result = cproxy.proximity(hexColor, hexColor0);
+                    // Compute the proximity percentage between two colors
+                    let result = cproxy.proximity(hexColor, hexColor0);
 
-                result = 100 - result;
+                    result = 100 - result;
 
-                if(result > 92){
-                    console.log('Matching higher than 92% with :', result);
-                    photoURLs.push(item.photo)
-                }else{
-                    console.log('Matching lesser than 92% with :', result);
+                    if(result > 92){
+                        photoURLs.push(item.photo)
+                    }
                 }
-            }
 
-        });
+            });
 
-        res.send(photoURLs)
+            res.send(photoURLs)
 
-    }else{
-        res.send('After checking this id is not correct, not into the database or record not containing dominant color!')
+        }else{
+            res.send('After checking this id is not correct, not into the database or record not containing dominant color!')
+        }
+    } catch (e) {
+        console.log(e)
     }
+
 });
 
 app.listen(process.env.PORT || 3053, () => {
